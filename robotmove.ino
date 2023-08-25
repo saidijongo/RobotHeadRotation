@@ -50,33 +50,39 @@ void frame180() {
 
 void reset() {
   if (whenReset) {
-    rotateCCW(5); // Rotating CCW by a small angle
-  }
-  if (digitalRead(RIGHT_SENSOR_PIN) == LOW) {
-    // Rotating 8 degrees CW
-    whenReset = false;
-    delay(2000);
-    rotateCW(8);
-    delay(2000); // Delay for stability
-    stopMotor();
+    while (digitalRead(RIGHT_SENSOR_PIN) == HIGH) {
+      rotateCCW(5); // Rotating CCW until right sensor is interrupted
+    }
+    delay(1000); // delay for stability
+
+    if (digitalRead(RIGHT_SENSOR_PIN) == LOW) {
+      // Rotating 8 degrees CW
+      whenReset = false;
+      delay(2000);
+      rotateCW(8);
+      delay(2000); // Delay for stability
+      stopMotor();
+    }
   }
 }
 
 void robotMovingStart() {
   if (!motorStopped) {
-    rotateCW(5); // Rotating CW by a small angle
-  }
-  if (digitalRead(LEFT_SENSOR_PIN) == LOW) {
-    // Rotating 8 degrees CCW
-    motorStopped = false;
-    delay(2000);
-    rotateCCW(8);
-    delay(2000); // Delay for stability
-    stopMotor();
+    while (digitalRead(LEFT_SENSOR_PIN) == HIGH) {
+      rotateCW(5); // Rotating CW until left sensor is interrupted
+    }
+    delay(1000); // delay for stability
+
+    if (digitalRead(LEFT_SENSOR_PIN) == LOW) {
+      // Rotating 8 degrees CCW
+      motorStopped = false;
+      delay(2000);
+      rotateCCW(8);
+      delay(2000); // Delay for stability
+      stopMotor();
+    }
   }
 }
-
-
 
 void setup() {
   pinMode(CW, OUTPUT);
@@ -85,17 +91,14 @@ void setup() {
   pinMode(LEFT_SENSOR_PIN, INPUT_PULLUP);
   Serial.begin(115200);
 }
-//22/72 *8
+
 void loop() {
   if (Serial.available() > 0) {
     String command = Serial.readStringUntil('\n');
     command.trim();
 
     if (command == "CW" || command == "CCW" || command == "STOP" || command == "RESET" || command == "MOVE" || command == "STATUS") {
-      //stopMotor();
-      //delay(2000);
       if (command == "CW") {
-        whenReset = false;
         rotateCW(90); // Rotate 90 degrees clockwise
         motorStopped = true;
         Serial.println("CW : 90");
@@ -104,35 +107,23 @@ void loop() {
         whenReset = false;
         rotateCCW(90); // Rotate 90 degrees counterclockwise
         motorStopped = true;
-        Serial.println("CW : 90");
+        Serial.println("CCW : 90");
 
-        } else if (command == "STOP") {
-        whenReset = false;
+      } else if (command == "STOP") {
         stopMotor(); 
-        motorStopped = true;
         Serial.println("STOPPED");
 
-        } else if (command == "STATUS") {
-        whenReset = false;
-        stopMotor(); 
-        Serial.println("motorStopped? 'Moving':'Stopped'");
+      } else if (command == "STATUS") {
+        Serial.println(motorStopped ? "Stopped" : "Moving");
 
       } else if (command == "RESET") {
-        whenReset = true;
         reset();
         Serial.println("HOME BASE");
-      } else if (command == "STATUS") {
-        Serial.println("motorStopped? 'Moving':'Stopped'");
-      }
-      else if (command == "MOVE") {
-        whenReset = false;
-        robotMovingStart();
-        Serial.println("Started Moving");
-    }
 
+      } else if (command == "MOVE") {
+        robotMovingStart();
+        Serial.println("STARTED MOVING");
+      }
+    }
   }
 }
-}
-
-
-
